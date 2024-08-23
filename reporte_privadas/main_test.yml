@@ -1,0 +1,85 @@
+---
+- name: Test para llamar a la tarea para reporte de las ips privadas.
+  hosts: all
+  gather_facts: false
+  vars:
+    reporte_privadas: prueba.txt
+    servidor_reporte: localhost
+    red_nodos:
+      - host: rhel1
+        conexion: privada1
+        dev: ens161
+        ip: 160.160.132.137
+        ipv6: disabled
+        gateway:
+        dominios:
+        dns:
+
+      - host: rhel1
+        conexion: privada2
+        dev: ens193
+        ip: 160.160.142.137
+        ipv6: disabled
+        gateway: 
+        dominios:
+        dns:
+
+      - host: rhel2
+        conexion: privada1
+        dev: ens161
+        ip: 160.160.132.138
+        ipv6: disabled
+        gateway:
+        dominios:
+        dns:
+
+      - host: rhel2
+        conexion: privada2
+        dev: ens193
+        ip: 160.160.142.138
+        ipv6: disabled
+        gateway: 
+        dominios:
+        dns:
+
+      - host: sol1
+        conexion: privada1
+        dev: ens161
+        ip: 160.160.152.185
+        ipv6: disabled
+        gateway:
+        dominios:
+        dns:
+
+      - host: sol1
+        conexion: privada2
+        dev: ens193
+        ip: 160.160.162.185
+        ipv6: disabled
+        gateway: 
+        dominios:
+        dns:
+
+      - host: sol2
+        conexion: privada1
+        dev: ens161
+        ip: 160.160.152.186
+        ipv6: disabled
+        gateway:
+        dominios:
+        dns:
+
+      - host: sol2
+        conexion: privada2
+        dev: ens193
+        ip: 160.160.162.186
+        ipv6: disabled
+        gateway: 
+        dominios:
+        dns:
+
+  tasks:
+
+  - name: Se invoca la tarea principal
+    include_tasks: reporte_ips_privadas.yml 
+    when: inventory_hostname in groups['cluster']

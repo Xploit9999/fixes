@@ -1,0 +1,65 @@
+---
+- block:
+  - name: Reporte IPS Privadas | Se valida la privada1 de los servidores para modelar.
+    set_fact:
+      privada: "{{ privada + item.ip + ' ' }}"
+    loop: "{{ red_nodos }}"
+    when: item.conexion == 'privada1'
+    vars:
+      privada: ""
+
+  - name: Reporte IPS Privadas | Se modela reporte por ambiente prod o lab.
+    set_fact:
+      reporte: >
+        {% for red in red_nodos %}
+          {% if red.host == inventory_hostname %}
+            {% for p1 in privada.split() %}
+              {% if red.ip == p1 %}
+                {% if red.host == inventory_hostname[:-1] + '1' %}
+                  {% set sub = p1 | replace(p1.split('.')[3], (p1.split('.')[3]|int - 1) | string)  %}
+                  {% if red.host in groups['Laboratorio'] %}
+                    {{ sub + ' ' + sub | replace(sub.split('.')[2],'142') + ' Sub' }}
+                  {% elif red.host in groups['Produccion'] %}
+                    {{ sub + ' ' + sub | replace(sub.split('.')[2],'162') + ' Sub' }}
+                  {% endif %}
+                {% endif %}
+                {% if red.host in groups['Laboratorio'] %}
+                  {{ p1 + ' ' + p1 | replace(p1.split('.')[2],'142') + ' ' + red.host }}
+                {% elif red.host in groups['Produccion'] %}
+                  {{ p1 + ' ' + p1 | replace(p1.split('.')[2],'162') + ' ' + red.host }}
+                {% endif %}
+                {% if red.host == inventory_hostname[:-1] + '2' %}
+                  {% set brod = p1 | replace(p1.split('.')[3], (p1.split('.')[3]|int + 1) | string)  %}
+                  {% if red.host in groups['Laboratorio'] %}
+                    {{ brod + ' ' + brod | replace(brod.split('.')[2],'142') + ' Broadcast' }}
+                  {% elif red.host in groups['Produccion'] %}
+                    {{ brod + ' ' + brod | replace(brod.split('.')[2],'162') + ' Broadcast' }}
+                  {% endif %}
+                {% endif %}
+             {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+  - name: Reporte IPS Privadas | Formatea reporte.
+    set_fact:
+      formatear: "{{ reporte.split('\n') | map('trim') | join('\n') }}"
+  
+  - name: Reporte IPS Privadas | Escribe informacion para ambiente de Laboratorio
+    lineinfile:
+      path: "{{ reporte_privadas }}"
+      line: "{{ formatear.strip() | replace('Broadcast', 'Broadcast\n') }}"
+      insertbefore: "<FINAL LABORATORIO>"
+    throttle: 1
+    when: inventory_hostname in groups['Laboratorio']
+
+  - name: Reporte IPS Privadas | Escribe informacion para ambiente de Produccion
+    lineinfile:
+      path: "{{ reporte_privadas }}"
+      line: "{{ formatear.strip() | replace('Broadcast', 'Broadcast\n') }}"
+      insertbefore: "<FINAL PRODUCCION>"
+    throttle: 1
+    when: inventory_hostname in groups['Produccion']
+
+  delegate_to: "{{ servidor_reporte }}"
+...
